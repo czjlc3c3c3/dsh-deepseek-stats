@@ -1,0 +1,45 @@
+{
+  "name": "dsh-deepseek-stats",
+  "version": "1.0.0",
+  "description": "DeepSeek 余额/用量浮窗（长期版）：官方余额 + 今日用量 + 峰谷计价 + 官方价目 6h 自动同步",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/czjlc3c3c3/dsh-deepseek-stats.git"
+  },
+  "homepage": "https://github.com/czjlc3c3c3/dsh-deepseek-stats#readme",
+  "keywords": [
+    "dsh",
+    "deepseek",
+    "balance",
+    "usage",
+    "cost",
+    "peak",
+    "off-peak",
+    "plugin"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  }
+}

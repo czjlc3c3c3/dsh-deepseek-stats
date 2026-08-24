@@ -1,0 +1,6 @@
+# dsh-deepseek-stats bundle patch: registers the balance/usage widget row.
+# Applied automatically when this package is listed in the profile's
+# dsh.profile.bundles (see README install steps).
+- insert:
+    - id: deepseek-stats
+      name: dsh-deepseek-stats
