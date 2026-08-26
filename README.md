@@ -28,7 +28,7 @@ dsh-deepseek-stats/
 ```bash
 # 1. 在 profile 目录安装（pnpm 直接安装 GitHub 仓库）
 cd ~/.dsh/profiles/web
-pnpm add github:czjlc3c3c3/dsh-deepseek-stats
+pnpm add github:czjlc3c3c3/dsh-deepseek-stats#semver:^1.0.0
 
 # 2. 登记为 bundle：确保 ~/.dsh/profiles/web/package.json 的
 #    dsh.profile.bundles 数组包含 "dsh-deepseek-stats"（首次安装需手动加一次）
@@ -38,14 +38,11 @@ pnpm add github:czjlc3c3c3/dsh-deepseek-stats
 
 包内 `cordis.patch.yml`（由 `dsh.bundle.patch` 声明）会在 profile 组装时自动插入插件行，无需手动修改 `cordis.yml`。
 
-更新：`cd ~/.dsh/profiles/web && pnpm update dsh-deepseek-stats` 后重启。
+更新：`cd ~/.dsh/profiles/web && pnpm update dsh-deepseek-stats` 后重启（`#semver:^1.0.0` 会自动取最新版本的 git tag）。
 
-## 本地开发模式（符号链接，改完重启即生效）
+## 本地开发（改完重启即生效）
 
-```bash
-ln -sfn /home/c3c3c3/projects/dsh-deepseek-stats ~/.dsh/profiles/node_modules/dsh-deepseek-stats
-# （先用 GitHub 方式装过一次，再替换为符号链接；或直接对已安装版本改源文件）
-```
+在仓库根目录执行 `pnpm link` 接入本机（或在 profile 的 `node_modules` 里用软链接指向仓库根目录），重启 DSH；改动提交推送 GitHub 后，其他用户 `pnpm update` 即可同步。
 
 ## 接口（宿主路由）
 
@@ -57,14 +54,15 @@ ln -sfn /home/c3c3c3/projects/dsh-deepseek-stats ~/.dsh/profiles/node_modules/ds
 ## 卸载
 
 ```bash
-rm ~/.dsh/profiles/node_modules/dsh-deepseek-stats
-# 从 ~/.dsh/profiles/web/package.json 的 dsh.profile.bundles 与 dependencies 中移除，然后重启
+cd ~/.dsh/profiles/web
+pnpm remove dsh-deepseek-stats
+# 再从 package.json 的 dsh.profile.bundles 中移除 "dsh-deepseek-stats"，然后重启
 ```
 
 ## 更新方式
 
 - **GitHub 安装的用户**：`cd ~/.dsh/profiles/web && pnpm update dsh-deepseek-stats` → 重启 DSH。
-- **本机开发**：直接编辑 `/home/c3c3c3/projects/dsh-deepseek-stats/` 下文件 → 重启 DSH 生效；改动提交后推送 GitHub 即可同步给其他用户。
+- **本机开发**：直接编辑本地仓库 `lib/` 下文件 → 重启 DSH 生效；改动提交推送 GitHub 即可同步给其他用户。
 
 ## 已知边界
 
