@@ -1,5 +1,12 @@
 # 更新日志
 
+## 1.0.3（2026-09-10）
+
+- 跟随官方 2026-09-10 改版：现行模型名为 **`deepseek-flash`**（DeepSeek-V4.1-Flash，实验名 `deepseek-v4.1-flash-expires-on-0910` 已转正）与 `deepseek-v4-pro`；内置价更新为 flash **hit 0.02 / miss 1 / out 4**、pro 0.15 / 4.5 / 13.5（元/百万 tokens，空闲时段）
+- 修复：官方价目页由 3 列改为 2 列后，解析函数写死的「取 m[0]/m[1]/m[2]」第三列取到 `undefined`，被数值校验挡下 → 同步整体失败、长期回退旧内置价。现改为**列数自适应**：列名从表头「模型 … BASE URL」提取、按列序映射，官方增删模型都不再需要改代码；表头与列数不一致时保守回退内置价
+- 旧名兼容：`deepseek-v4-flash`、`deepseek-v4-flash-vision-exp` 按官方说明映射到 `deepseek-flash` 计价（官方：旧名仍可调用，但由 V4.1 Flash 提供服务并按其价格计费）
+- 兜底匹配改为 `pro` / `flash` 关键字（`deepseek-chat` 等旧名同样走 flash 价）
+
 ## 1.0.2（2026-09-08）
 
 - 新增：内置价目加入实验模型 `deepseek-v4.1-flash-expires-on-0910`（官方价目页未列出，当前与 `deepseek-v4-flash` 同价）
