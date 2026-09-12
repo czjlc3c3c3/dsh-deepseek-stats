@@ -1,6 +1,6 @@
 {
   "name": "dsh-deepseek-stats",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "DeepSeek 余额/用量浮窗（长期版）：官方余额 + 今日用量 + 峰谷计价 + 官方价目 6h 自动同步",
   "license": "MIT",
   "type": "module",
