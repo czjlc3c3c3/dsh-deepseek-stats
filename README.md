@@ -56,6 +56,11 @@ pnpm add github:czjlc3c3c3/dsh-deepseek-stats#semver:^1.0.0
 
 - **已验证**：DSH **0.1.7-rc.2** 与 **0.2.0-rc.1**（Web profile）上功能完整——宿主 `session/event` 载荷（`(session, event)` + `assistant/message.usage`）、`credentials.resolve`、`webServer.register`、`sessionPersistence.root` / `dshHomePath`、客户端 `__ModuleLoader__` 协议与 `shell.overlay` 槽位、bundle 路由 `plugins/??<id>/client.js&rev=…` 均未变。
 - **用量事件**：DSH 里只有 `assistant/message` 带 `usage`；`assistant/attempt`（失败/重试/取消的尝试）**按类型不带 usage**，本机历史日志 71 条 attempt 亦未见用量记录——故按 `assistant/message` 折叠即为完整口径。
+- **0.2.0 插件兼容门禁（重要，本插件安全通过）**：DSH 0.2.0 起，profile 组装时会核对每个 bundle 的 `peerDependencies` 中 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` 项与运行时版本的 semver 匹配；**不匹配则该 bundle 被整体跳过**（启动日志：`dsh: skipping profile bundle "<name>": Error: Plugin <pkg>@<ver> is incompatible with dsh <runtime>…`）。
+  - 本插件**不声明任何 `@deepseek-ai/*` peerDependencies**（只 import Node 内置模块，经 `ctx` 服务与客户端 `__ModuleLoader__` 协议取数），门禁的 `if (!Object.hasOwn(fields, "peerDependencies")) return undefined` **直接放行**——0.2.0-rc.1 实测未出现在跳过名单，功能完整。
+  - **维护不变量：不要给本插件添加 `@deepseek-ai/dsh-*` 的 peerDependencies**。一旦声明门禁就会开始校验，范围写窄就会像其它插件那样在 DSH 升级后被**静默跳过**（同机 `dsh-mnemon`、`dsh-zotero`、`dsh-plugin-writing-guard` 即因此被跳过）。
+  - 核查：`grep 'skipping profile bundle' <DSH 启动日志> | grep deepseek-stats`（无输出=已加载；也可看日志里有否插件的 `[deepseek-stats]` 行）。
+  - 万一将来被跳过：用 `dsh plugin allow-version` 或插件管理器授予**精确版本豁免**（写入该 profile 的 `compatibility.json`，形如 `{"<pkg>@<ver>": ["<DSH 版本>"]}`），再重启；桌面端由应用管理，豁免须在桌面端侧授予。
 - **桌面端（Electron）**：DSH 0.2.0 起有 Electron 桌面端，它使用**保留 profile 名 `desktop`**，CLI 明确拒绝管理（`error: profile "desktop" is managed exclusively by the Electron application`）。因此桌面端安装本插件必须**由桌面应用自身管理**（应用内的插件/设置入口），不能用 `dsh plugin --profile desktop …`。
 - 桌面端能否显示本浮窗取决于桌面宿主是否满足两点（本机容器内无法验证，需在桌面端实测）：① 客户端插件表按 `dsh.client.platform` 过滤，随附 Web 宿主硬编码只接受 `"web"`——若桌面宿主复用同一实现则本插件（`platform: "web"`）可直接加载，若它使用别的平台标识则需另出桌面变体；② 宿主需挂载 `webServer`（本插件宿主半身暴露 HTTP 路由），且界面与路由同源（客户端用相对路径 `fetch('/plugins/deepseek-stats/state')`）。
 - 若桌面端装上后浮窗不出现，请提供桌面应用的启动日志（其中会打印本插件的 `[deepseek-stats]` 行，如「回填…」「价目同步…」）：**有插件日志=宿主半身已加载**，问题在客户端平台/同源；**完全没有=宿主半身未加载**（可能缺 `webServer` 服务）。

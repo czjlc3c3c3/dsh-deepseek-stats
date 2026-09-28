@@ -1,5 +1,11 @@
 # 更新日志
 
+## 1.1.3（2026-09-28）
+
+- **新增：0.2.0 插件兼容门禁说明（本插件安全通过）**。DSH 0.2.0 起 profile 组装会校验 bundle 的 `@deepseek-ai/dsh*` peerDependencies 与运行时版本；**不匹配即整包跳过**（`dsh: skipping profile bundle …`）。本机实测：`dsh-mnemon@0.5.13`、`dsh-zotero@0.10.1`、`dsh-plugin-writing-guard@2.0.1` 均被跳过（后者已在 web profile 的 `compatibility.json` 中按精确版本豁免）；**`dsh-deepseek-stats` 未在跳过名单**——因为它不声明任何 `@deepseek-ai/*` peerDependencies，门禁 `if (!Object.hasOwn(fields, "peerDependencies")) return undefined` 直接放行
+- README 增补该门禁的判定规则、自查命令与豁免逃生口，并写入**维护不变量：不要添加 `@deepseek-ai/dsh-*` peerDependencies**（一旦声明就会开始被校验，范围写窄将在 DSH 升级后被静默跳过）；桌面端同样受此门禁约束，且豁免需在桌面端侧授予
+- 无代码改动（纯文档 + 版本号）
+
 ## 1.1.2（2026-09-28）
 
 - **DSH 0.2.0-rc.1 兼容性核对：无需改代码**。宿主侧 `session/event`（`(session, event)`）、`TokenUsage` 字段、`webServer.register`、`credentials.resolve`、`sessionPersistence.root`、`dshHomePath`；客户端侧 `__ModuleLoader__` 协议、`shell.overlay` 槽位、bundle 路由 `plugins/??<id>/client.js&rev=…` 均未变。生产实测：`/state` 正常（回填 `mode=mtime`）、客户端 bundle 200（18.5 KB，注入 5 处、widget 标记齐全）
