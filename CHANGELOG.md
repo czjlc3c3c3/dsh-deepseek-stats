@@ -1,5 +1,15 @@
 # 更新日志
 
+## 1.2.1（2026-09-28）
+
+- **修正账号通道的 client 元数据**：`x-client-version` 改为传**运行版本**（取自 `profileContext.installAnchor` 下 dsh 包的 `package.json`，本机实测得到 `0.2.0-rc.1`；取不到才退回插件版本）。此前传的是插件版本 `1.2.0`，与官方 UI 的 `accountClientMetadata(locale, "0.2.0-rc.1")` 不一致，平台侧若按 `x-client-version` 校验会被拒。
+- **新增余额诊断**（用于定位「桌面端已登录却报未登录」）：失败时写日志 `[deepseek-stats] 余额通道诊断: {...}`，并随 `/state.balanceDiag` 暴露，卡片在告警下方多显示一行「诊断：账号服务 可见/不可见 · 账号登录态 … · 宿主账号凭据 有/无 · Key 有/无 · client版本 …」。
+  - `accountVisible` = `ctx.get('deepseekAccount')` 且有 `getBalance`；
+  - `accountState` = `getState().status`（`signed-out` / `credential-stored`）；
+  - `accountCredential` = `credentials.listRecords()` 中是否存在键名含 `deepseek-account-platform` 的记录（官方账号平台把登录凭据写在这里），用来区分「服务不可见」与「宿主凭据库里确实没有登录凭据」。
+- 卡片页脚新增**插件版本号**（`插件 v1.2.1`），用于确认桌面端是否真的热更到了新版本。
+- 离线验证仍 4/4 通过；另验证诊断字段在「账号未登录」「服务不可见」两种情形下取值正确、`clientVersion` 解析为运行版本。
+
 ## 1.2.0（2026-09-28）
 
 - **新增：余额双通道，支持 DSH 桌面端（官方账号登录，无需 API Key）**。桌面端登录官方账号后，插件原先只认 `DEEPSEEK_API_KEY`，会误报「未配置 KEY」；现改为：
