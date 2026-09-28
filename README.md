@@ -4,7 +4,7 @@ DeepSeek 账户「余额 / 用量」实时浮窗插件（DSH 长期生效版）�
 
 ## 功能一览
 
-- **官方余额**：直连 `api.deepseek.com/user/balance`（API Key 走 DSH 凭据通道 `DEEPSEEK_API_KEY`，不进入浏览器）；15 秒缓存，点击 ⟳ 强制刷新（2 秒冷却，旋转反馈）。
+- **官方余额（双通道）**：① Web/自建部署走 API Key——`DEEPSEEK_API_KEY` 经 DSH 凭据通道读取（不进浏览器），直连 `api.deepseek.com/user/balance`；② **DSH 桌面端**（登录官方账号、无 API Key）自动回落到官方账号通道 `ctx.deepseekAccount.getBalance(client)`，语义映射 `value`=充值余额、`bonusWallets`=赠金余额，卡片展示总额＝两者之和。15 秒缓存，点击 ⟳ 强制刷新（2 秒冷却，旋转反馈）；「价源」行会标注当前「余额源 API Key / 官方账号」。
 - **今日用量**：宿主监听 `session/event` 的 `assistant/message`（含 `usage`）实时累加；启动时回填当日已落库事件——**按会话日志 mtime 预筛「今日活跃会话」**（长寿命会话不会因"创建得早"被漏掉），存储布局/服务不可识别时回退全量（上限 500 个会话）；按北京时间午夜自动滚动。展开卡片可见「回填」覆盖行（模式/候选/成功/折叠条数），`/state` 里对应 `backfill` 字段。
 - **峰谷计价**：高峰时段 = 北京时间 周一至周五（**不含中国法定节假日**）09:00–12:00 / 14:00–18:00（价格 ×官方倍率，默认 2）；其余时段**包括周末与法定节假日全天、调休上班日**均为空闲 ×1（官方 2026-09 页脚注口径）。按每条消息发起时刻计价；缓存命中 / 未命中 / 缓存写 / 输出分档；未知模型不计价并在界面标注。内置价目（2026-09-10 官方）：`deepseek-flash` 0.02 / 1 / 4、`deepseek-v4-pro` 0.15 / 4.5 / 13.5（元/百万 tokens，空闲时段；高峰 ×2）。旧名 `deepseek-v4-flash`、`deepseek-v4-flash-vision-exp` 与已转正的实验名 `deepseek-v4.1-flash-expires-on-0910` 均按 `deepseek-flash` 计价；名称含 `flash` / `pro` 的未知变体分别按 flash / pro 价兜底。
 - **节假日表**：内置 2026 全年（33 天法定休假日 + 6 个调休上班日），并按日从 `holiday-cn`（国务院公告口径数据集）同步当年与次年安排；同步失败保留内置表；卡片「价源」行会标注「节假日源 官方数据集 / 内置」。
@@ -61,7 +61,7 @@ pnpm add github:czjlc3c3c3/dsh-deepseek-stats#semver:^1.0.0
   - **维护不变量：不要给本插件添加 `@deepseek-ai/dsh-*` 的 peerDependencies**。一旦声明门禁就会开始校验，范围写窄就会像其它插件那样在 DSH 升级后被**静默跳过**（同机 `dsh-mnemon`、`dsh-zotero`、`dsh-plugin-writing-guard` 即因此被跳过）。
   - 核查：`grep 'skipping profile bundle' <DSH 启动日志> | grep deepseek-stats`（无输出=已加载；也可看日志里有否插件的 `[deepseek-stats]` 行）。
   - 万一将来被跳过：用 `dsh plugin allow-version` 或插件管理器授予**精确版本豁免**（写入该 profile 的 `compatibility.json`，形如 `{"<pkg>@<ver>": ["<DSH 版本>"]}`），再重启；桌面端由应用管理，豁免须在桌面端侧授予。
-- **桌面端（Electron）**：DSH 0.2.0 起有 Electron 桌面端，它使用**保留 profile 名 `desktop`**，CLI 明确拒绝管理（`error: profile "desktop" is managed exclusively by the Electron application`）。因此桌面端安装本插件必须**由桌面应用自身管理**（应用内的插件/设置入口），不能用 `dsh plugin --profile desktop …`。
+- **桌面端（Electron）实测**：0.2.0 的桌面端**能正常加载本插件**（宿主半身 + 客户端半身都生效——浮窗会出现）；此前唯一的障碍是余额凭据：桌面端登录官方账号、没有 `DEEPSEEK_API_KEY`，v1.2.0 起已支持账号通道，无需再配 Key。桌面端使用**保留 profile 名 `desktop`**，CLI 明确拒绝管理（`error: profile "desktop" is managed exclusively by the Electron application`）。因此桌面端安装本插件必须**由桌面应用自身管理**（应用内的插件/设置入口），不能用 `dsh plugin --profile desktop …`。
 - 桌面端能否显示本浮窗取决于桌面宿主是否满足两点（本机容器内无法验证，需在桌面端实测）：① 客户端插件表按 `dsh.client.platform` 过滤，随附 Web 宿主硬编码只接受 `"web"`——若桌面宿主复用同一实现则本插件（`platform: "web"`）可直接加载，若它使用别的平台标识则需另出桌面变体；② 宿主需挂载 `webServer`（本插件宿主半身暴露 HTTP 路由），且界面与路由同源（客户端用相对路径 `fetch('/plugins/deepseek-stats/state')`）。
 - 若桌面端装上后浮窗不出现，请提供桌面应用的启动日志（其中会打印本插件的 `[deepseek-stats]` 行，如「回填…」「价目同步…」）：**有插件日志=宿主半身已加载**，问题在客户端平台/同源；**完全没有=宿主半身未加载**（可能缺 `webServer` 服务）。
 
