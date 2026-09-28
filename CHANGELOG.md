@@ -1,5 +1,12 @@
 # 更新日志
 
+## 1.1.2（2026-09-28）
+
+- **DSH 0.2.0-rc.1 兼容性核对：无需改代码**。宿主侧 `session/event`（`(session, event)`）、`TokenUsage` 字段、`webServer.register`、`credentials.resolve`、`sessionPersistence.root`、`dshHomePath`；客户端侧 `__ModuleLoader__` 协议、`shell.overlay` 槽位、bundle 路由 `plugins/??<id>/client.js&rev=…` 均未变。生产实测：`/state` 正常（回填 `mode=mtime`）、客户端 bundle 200（18.5 KB，注入 5 处、widget 标记齐全）
+- **用量口径复核**：DSH 里只有 `assistant/message` 携带 `usage`；`assistant/attempt`（失败/重试/取消的尝试）**按类型无 usage 字段**，本机历史 71 条 attempt 亦未见用量记录；14,157/14,178 条 `assistant/message` 带 usage → 按 `assistant/message` 折叠即为完整
+- **桌面端（Electron）说明入 README**：0.2.0 起桌面端使用保留 profile 名 `desktop`，CLI 明确拒绝管理（`profile "desktop" is managed exclusively by the Electron application`），安装须由桌面应用自身完成；随附 Web 宿主的客户端插件表硬编码只接受 `dsh.client.platform === "web"`，桌面端是否可直接加载本插件需在桌面实机验证（另需宿主挂载 `webServer` 且界面同源，客户端才取得到数据）。附排障判据：看桌面端启动日志里有无本插件 `[deepseek-stats]` 行
+- 参考（未采纳）：0.2.0 新增官方 `tokenMeter` 服务与 `usage-projection`/`turn-usage` 折叠，但它们给出的是**会话生命周期总量/上下文占用量**，不含"按日"切分，无法直接替代本插件的当日统计
+
 ## 1.1.1（2026-09-25）
 
 - **修复：启动回填漏会话导致「今日用量」系统性少算**。原实现 `listSessions().slice(0, 40)` 取的是**按创建时间**最新的 40 个会话，长寿命会话（如创建于 08-26 的本会话）永远排不进窗口 → 它们"启动前活跃、启动后不活跃"的当日用量既没被回填、也收不到实时事件，直接丢失

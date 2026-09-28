@@ -52,6 +52,14 @@ pnpm add github:czjlc3c3c3/dsh-deepseek-stats#semver:^1.0.0
 | `GET /plugins/deepseek-stats/state` | 完整快照（余额 15 秒缓存 + 今日用量 + 时段 + 价源） |
 | `GET /plugins/deepseek-stats/refresh` | 强制刷新余额（2 秒冷却） |
 
+## 兼容性（DSH 版本 / 桌面端）
+
+- **已验证**：DSH **0.1.7-rc.2** 与 **0.2.0-rc.1**（Web profile）上功能完整——宿主 `session/event` 载荷（`(session, event)` + `assistant/message.usage`）、`credentials.resolve`、`webServer.register`、`sessionPersistence.root` / `dshHomePath`、客户端 `__ModuleLoader__` 协议与 `shell.overlay` 槽位、bundle 路由 `plugins/??<id>/client.js&rev=…` 均未变。
+- **用量事件**：DSH 里只有 `assistant/message` 带 `usage`；`assistant/attempt`（失败/重试/取消的尝试）**按类型不带 usage**，本机历史日志 71 条 attempt 亦未见用量记录——故按 `assistant/message` 折叠即为完整口径。
+- **桌面端（Electron）**：DSH 0.2.0 起有 Electron 桌面端，它使用**保留 profile 名 `desktop`**，CLI 明确拒绝管理（`error: profile "desktop" is managed exclusively by the Electron application`）。因此桌面端安装本插件必须**由桌面应用自身管理**（应用内的插件/设置入口），不能用 `dsh plugin --profile desktop …`。
+- 桌面端能否显示本浮窗取决于桌面宿主是否满足两点（本机容器内无法验证，需在桌面端实测）：① 客户端插件表按 `dsh.client.platform` 过滤，随附 Web 宿主硬编码只接受 `"web"`——若桌面宿主复用同一实现则本插件（`platform: "web"`）可直接加载，若它使用别的平台标识则需另出桌面变体；② 宿主需挂载 `webServer`（本插件宿主半身暴露 HTTP 路由），且界面与路由同源（客户端用相对路径 `fetch('/plugins/deepseek-stats/state')`）。
+- 若桌面端装上后浮窗不出现，请提供桌面应用的启动日志（其中会打印本插件的 `[deepseek-stats]` 行，如「回填…」「价目同步…」）：**有插件日志=宿主半身已加载**，问题在客户端平台/同源；**完全没有=宿主半身未加载**（可能缺 `webServer` 服务）。
+
 ## 卸载
 
 ```bash
