@@ -1,5 +1,14 @@
 # 更新日志
 
+## 1.2.0（2026-09-28）
+
+- **新增：余额双通道，支持 DSH 桌面端（官方账号登录，无需 API Key）**。桌面端登录官方账号后，插件原先只认 `DEEPSEEK_API_KEY`，会误报「未配置 KEY」；现改为：
+  1. 先走 API Key 通道（Web/自建部署）：`credentials.resolve('DEEPSEEK_API_KEY')` → `api.deepseek.com/user/balance`；
+  2. 未命中则回落到**官方账号通道**：`ctx.get('deepseekAccount').getBalance({version, locale, timezoneOffsetSeconds})` —— 语义按官方实现映射：`balance.value` = **充值余额**、`balance.bonusWallets` = **赠金余额**（与官方设置页「充值余额 / 赠金余额」文案一致），展示的总额 = 两者之和。
+- `keyState` 新增 `mode`：`api-key` / `account` / `account-signed-out` / `none`；卡片按模式给出准确提示（账号未登录就提示去登录、两者皆无才提示配置 Key），并在「价源」行附带「余额源 API Key / 官方账号」。
+- 账号服务经 `ctx.get('deepseekAccount')` **动态获取**，缺失时安全回落——因此**不新增任何 `@deepseek-ai/*` 依赖**，仍不声明 peerDependencies，兼容门禁照旧放行。
+- 离线验证 4/4 通过：① 仅 Key（解析 total/granted/topped）② 无 Key + 账号已登录（充值 123.45 + 赠金 6.55 → 130，client metadata 含 version/locale/tz）③ 账号未登录（提示登录）④ 两者皆无（提示配置 Key）。
+
 ## 1.1.3（2026-09-28）
 
 - **新增：0.2.0 插件兼容门禁说明（本插件安全通过）**。DSH 0.2.0 起 profile 组装会校验 bundle 的 `@deepseek-ai/dsh*` peerDependencies 与运行时版本；**不匹配即整包跳过**（`dsh: skipping profile bundle …`）。本机实测：`dsh-mnemon@0.5.13`、`dsh-zotero@0.10.1`、`dsh-plugin-writing-guard@2.0.1` 均被跳过（后者已在 web profile 的 `compatibility.json` 中按精确版本豁免）；**`dsh-deepseek-stats` 未在跳过名单**——因为它不声明任何 `@deepseek-ai/*` peerDependencies，门禁 `if (!Object.hasOwn(fields, "peerDependencies")) return undefined` 直接放行
