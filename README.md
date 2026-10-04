@@ -55,8 +55,10 @@ pnpm add github:czjlc3c3c3/dsh-deepseek-stats#semver:^1.0.0
 
 ## 兼容性（DSH 版本 / 桌面端）
 
-- **已验证**：DSH **0.1.7-rc.2**、**0.2.0-rc.1**、**0.2.0-rc.2**（Web profile，另见下方桌面端）上功能完整——宿主 `session/event` 载荷（`(session, event)` + `assistant/message.usage`）、`credentials.resolve`、`webServer.register`、`sessionPersistence.root` / `dshHomePath`、客户端 `__ModuleLoader__` 协议与 `shell.overlay` 槽位、bundle 路由 `plugins/??<id>/client.js&rev=…` 均未变。（rc.2 的变更面经 npm tarball 逐包 diff 核对：仅 CLI 启动器 `bin.js` 与类型 + README，其余包只有版本号。）
+- **已验证**：DSH **0.1.7-rc.2**、**0.2.0-rc.1**、**0.2.0-rc.2**、**0.2.1-alpha.1**（Web profile，另见下方桌面端）上功能完整——宿主 `session/event` 载荷（`(session, event)` + `assistant/message.usage`）、`credentials.resolve`、`webServer.register`、`sessionPersistence.root` / `dshHomePath`、客户端 `__ModuleLoader__` 协议与 `shell.overlay` 槽位、bundle 路由 `plugins/??<id>/client.js&rev=…` 均未变。（变更面一律用「两版本 npm tarball 逐包 diff」核对：rc.2 只改 CLI 启动器；0.2.1-alpha.1 新增 `schedule` 服务与 `dsh web --public-url`，其余为内部清理——本插件依赖的接口与兼容门禁函数均未变。）
 - **用量事件**：DSH 里只有 `assistant/message` 带 `usage`；`assistant/attempt`（失败/重试/取消的尝试）**按类型不带 usage**，本机历史日志 71 条 attempt 亦未见用量记录——故按 `assistant/message` 折叠即为完整口径。
+- **回填策略**：按会话日志 mtime 预筛「今日活跃会话」；**布局不可识别**时全量兜底（上限 500），**布局已识别但今日无日志写入**时直接跳过（`/state.backfill.skippedEmpty`）——不会为此把全部会话重放校验一遍。
+- **经反代/发布 URL 访问**：DSH 对外入口（manager 3080、或 nginx/tailnet）为**全路径转发**，`/plugins/*` 无需额外配置即可到达；客户端一律相对路径取数，`dsh web --public-url` 不影响本插件。
 - **0.2.0 插件兼容门禁（重要，本插件安全通过）**：DSH 0.2.0 起，profile 组装时会核对每个 bundle 的 `peerDependencies` 中 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` 项与运行时版本的 semver 匹配；**不匹配则该 bundle 被整体跳过**（启动日志：`dsh: skipping profile bundle "<name>": Error: Plugin <pkg>@<ver> is incompatible with dsh <runtime>…`）。
   - 本插件**不声明任何 `@deepseek-ai/*` peerDependencies**（只 import Node 内置模块，经 `ctx` 服务与客户端 `__ModuleLoader__` 协议取数），门禁的 `if (!Object.hasOwn(fields, "peerDependencies")) return undefined` **直接放行**——0.2.0-rc.1 实测未出现在跳过名单，功能完整。
   - **维护不变量：不要给本插件添加 `@deepseek-ai/dsh-*` 的 peerDependencies**。一旦声明门禁就会开始校验，范围写窄就会像其它插件那样在 DSH 升级后被**静默跳过**（同机 `dsh-mnemon`、`dsh-zotero`、`dsh-plugin-writing-guard` 即因此被跳过）。

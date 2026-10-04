@@ -1,5 +1,12 @@
 # 更新日志
 
+## 1.2.3（2026-10-04）
+
+- **DSH 0.2.1-alpha.1 兼容核对：无需改代码**。仍用「两版本 npm tarball 逐包 diff」核对变更面：新增 `@deepseek-ai/dsh-schedule`（`schedule` 行进入 web-app 组合，提供定时任务/提醒）与 **`dsh web --public-url`**（对外公布 URL，新增 `public-url-*.js`）；其余为内部清理/注释（账号平台错误码 `network`→`no-response`、credentials 的 invariant 伴生文件内联、`refresh()` 不再向队列抛错、app-boot 引入 `ProfileRuntimeResolution`）。**我们依赖的接口全部未变**：`session/event(session,event)`、`TokenUsage` 字段、`webServer.register`、`credentials.resolve/readRecord/listRecords`、`sessionPersistence.root`、`dshHomePath`、客户端 `__ModuleLoader__`/`shell.overlay`、bundle 路由、会话日志布局；**兼容门禁函数逐字节相同**（`evaluatePluginCompatibility`/`preflight`/`readProfileCompatibility` md5 一致），插件仍以"不声明 peerDependencies"放行。
+- **修复：回填不再在"今日无人写日志"时退化成全量扫描**。此前只要 mtime 预筛无候选就落到全量兜底（日志可见 `回填今日用量：全量选 332/332 个`，等于把几百个会话全部重放校验）。现在区分「布局不可识别」（保留全量兜底）与「**布局已识别但今日无会话日志写入**」（今日不可能有已落库事件 → 直接跳过、零读取）。新增 `/state.backfill.skippedEmpty`，卡片显示「回填 今日无会话日志写入，无需回填（已跳过全量扫描）」。
+- 离线验证 3/3：① 今日有写入 → `mode=mtime` 候选 1、只读该会话；② 今日无写入 → `mode=mtime` 候选 0、**读取 0**、`skippedEmpty=true`；③ 布局不可识别 → `mode=all` 候选 2、读 2。余额通道回归 4/4（账号 metadata 的 `version` 已自动跟到 `0.2.1-alpha.1`）。
+- 另注（无需改动）：对外入口（manager 3080 与 nginx/tailnet）是**全路径转发**（`/app/proxy` 仅 3 个 PUBLIC_PATHS 免鉴权，其余 Basic 鉴权后一律转 3079）→ `/plugins/*` 天然可达；客户端用相对路径取数，`--public-url` 不影响本插件。
+
 ## 1.2.2（2026-09-29）
 
 - 文档：README「已验证 DSH 版本」加入 **0.2.0-rc.2**（附注 rc.2 的变更面经 npm tarball 逐包 diff 核对＝仅 CLI 启动器与类型 + README，其余包只有版本号）
