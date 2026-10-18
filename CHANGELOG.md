@@ -1,5 +1,11 @@
 # 更新日志
 
+## 1.4.2（2026-10-18）
+
+- **tooltip 改为与面板同一显示风格**：背景 `--dsw-alias-bg-overlay`（与浮窗/卡片同一表面色）、文字 `--dsw-alias-label-primary`、标签行 `--dsw-alias-label-secondary`、边框 `--dsw-alias-border-l2`、阴影浮起——不再用深底白字，跟随 DSH 明暗主题。
+- 已核对所用变量均有定义：`bg-overlay`（浅 `bluish-150` / 深 `bluish-700`）、`border-l2`（`#0000001a` / `#ffffff1f`）、`label-primary/secondary`。
+- 无头渲染 4 组用例仍通过。
+
 ## 1.4.1（2026-10-18）
 
 - **修：环形图悬停 tooltip 看不清（深底黑字）**。原因是 `color` 用了 `--dsw-alias-tooltip-label`——该变量在主题里**并不存在**，声明失效后颜色继承卡片自身的 `--dsw-alias-label-primary`（浅色主题下是近黑色），而 tooltip 背景是深灰（`--dsw-alias-tooltip-bg` = `#2c2c2e`/`#43454a`），于是黑字黑底。现改为 tooltip **自带配色**（与 DSH 自身 tooltip 一致）：深底 + 白字、标签行 `rgba(255,255,255,.62)`、加 1px 半透明边框；背景仍优先取 `--dsw-alias-tooltip-bg`，取不到时兜底 `#2c2c2e`。
