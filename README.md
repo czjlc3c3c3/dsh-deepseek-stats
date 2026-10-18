@@ -55,12 +55,16 @@ pnpm add github:czjlc3c3c3/dsh-deepseek-stats#semver:^1.0.0
 
 ## 兼容性（DSH 版本 / 桌面端）
 
-- **已验证**：DSH **0.1.7-rc.2**、**0.2.0-rc.1**、**0.2.0-rc.2**、**0.2.1-alpha.1**（Web profile，另见下方桌面端）上功能完整——宿主 `session/event` 载荷（`(session, event)` + `assistant/message.usage`）、`credentials.resolve`、`webServer.register`、`sessionPersistence.root` / `dshHomePath`、客户端 `__ModuleLoader__` 协议与 `shell.overlay` 槽位、bundle 路由 `plugins/??<id>/client.js&rev=…` 均未变。（变更面一律用「两版本 npm tarball 逐包 diff」核对：rc.2 只改 CLI 启动器；0.2.1-alpha.1 新增 `schedule` 服务与 `dsh web --public-url`，其余为内部清理——本插件依赖的接口与兼容门禁函数均未变。）
+- **已验证**：DSH **0.1.7-rc.2**、**0.2.0-rc.1**、**0.2.0-rc.2**、**0.2.1-alpha.1**、**0.2.1-rc.2**（Web profile，另见下方桌面端）上功能完整——宿主 `session/event` 载荷（`(session, event)` + `assistant/message.usage`）、`TokenUsage` 字段、`credentials.resolve`、`webServer.register`（`:326`）、`sessionPersistence.root` / `dshHomePath`、会话日志布局 `…/<id>/session.v4.jsonl.zstd`、客户端 `__ModuleLoader__` 协议与 `shell.overlay` 槽位、bundle 路由 `plugins/??<id>/client.js&rev=…` 均未变。
+- **变更面核查方式**：一律用「两版本 npm tarball 逐包 diff」（`https://registry.npmjs.org/@deepseek-ai/<pkg>/-/<pkg>-<ver>.tgz`），关键函数直接按区间取 md5 比对是否逐字节相同。0.2.1-rc.2 相对 alpha.1：新增 `engines.dsh` 门禁语义、客户端 **release 门禁**、`job/*` 与 `working-directory/change` 事件类型、`remote-access` 与 `working-directory`/`tool-working-directory` 服务行、若干 experimental bundle（plugin-market / ralph / session-search / session-titles / terminal / tool-worktree / cot-translation / badge-skill），移除 webhook 与 hooks-* 包；**本插件依赖的接口全部未变**。
 - **用量事件**：DSH 里只有 `assistant/message` 带 `usage`；`assistant/attempt`（失败/重试/取消的尝试）**按类型不带 usage**，本机历史日志 71 条 attempt 亦未见用量记录——故按 `assistant/message` 折叠即为完整口径。
 - **回填策略**：按会话日志 mtime 预筛「今日活跃会话」；**布局不可识别**时全量兜底（上限 500），**布局已识别但今日无日志写入**时直接跳过（`/state.backfill.skippedEmpty`）——不会为此把全部会话重放校验一遍。
 - **经反代/发布 URL 访问**：DSH 对外入口（manager 3080、或 nginx/tailnet）为**全路径转发**，`/plugins/*` 无需额外配置即可到达；客户端一律相对路径取数，`dsh web --public-url` 不影响本插件。
-- **0.2.0 插件兼容门禁（重要，本插件安全通过）**：DSH 0.2.0 起，profile 组装时会核对每个 bundle 的 `peerDependencies` 中 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` 项与运行时版本的 semver 匹配；**不匹配则该 bundle 被整体跳过**（启动日志：`dsh: skipping profile bundle "<name>": Error: Plugin <pkg>@<ver> is incompatible with dsh <runtime>…`）。
-  - 本插件**不声明任何 `@deepseek-ai/*` peerDependencies**（只 import Node 内置模块，经 `ctx` 服务与客户端 `__ModuleLoader__` 协议取数），门禁的 `if (!Object.hasOwn(fields, "peerDependencies")) return undefined` **直接放行**——0.2.0-rc.1 实测未出现在跳过名单，功能完整。
+- **插件兼容门禁（重要，本插件安全通过）**：DSH 0.2.0 起，profile 组装时会核对每个 bundle 声明的 DSH 版本要求，**不匹配则该 bundle 被整体跳过**（启动日志：`dsh: skipping profile bundle "<name>": Error: Plugin <pkg>@<ver> is incompatible with dsh <runtime>…`）。
+  - **0.2.1-rc.2 起语义更新**：优先看 `package.json` 的 **`engines.dsh`** 范围（声明了它就**只按它判定、忽略 peerDependencies**）；没有 `engines.dsh` 才回落到 `peerDependencies` 里的 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*`；**两者都没有则直接放行**。判定函数 `unmetRequirements`（`dsh-app-boot`），结果字段由 `peers` 改为 `requirements`。
+  - 本插件只声明 `engines.node`（**无 `engines.dsh`、无 `@deepseek-ai/*` peerDependencies**），门禁因此总是放行——0.2.0-rc.1 / 0.2.1-alpha.1 / 0.2.1-rc.2 实测均未出现在跳过名单，功能完整。
+  - 若将来要"声明支持范围"，可改用 **`engines.dsh` 的纯下界范围**（如 `">=0.1.7-rc.2"`）：新版本永远满足、不会因升级被跳过，但注意 semver 预发布语义（`-rc.N` 版本对 `>=` 范围的匹配需实测确认），改完必须重启并在日志里确认未被跳过。
+  - **客户端 release 门禁（0.2.1-rc.2 新增，插件无需适配）**：客户端模块图携带 `WebBootRelease {version, commit}`；页面启动时的图与随后连上的 Host 版本不一致时，**图不会被应用**，更新暂停到"Host 回到该 release 或页面重载"。含义：**DSH 升级后已打开的标签页要刷新**才会换上新前端/新插件 bundle。插件侧无需声明任何东西（该字段由 Host 图携带，可选）。
   - **维护不变量：不要给本插件添加 `@deepseek-ai/dsh-*` 的 peerDependencies**。一旦声明门禁就会开始校验，范围写窄就会像其它插件那样在 DSH 升级后被**静默跳过**（同机 `dsh-mnemon`、`dsh-zotero`、`dsh-plugin-writing-guard` 即因此被跳过）。
   - 核查：`grep 'skipping profile bundle' <DSH 启动日志> | grep deepseek-stats`（无输出=已加载；也可看日志里有否插件的 `[deepseek-stats]` 行）。
   - 万一将来被跳过：用 `dsh plugin allow-version` 或插件管理器授予**精确版本豁免**（写入该 profile 的 `compatibility.json`，形如 `{"<pkg>@<ver>": ["<DSH 版本>"]}`），再重启；桌面端由应用管理，豁免须在桌面端侧授予。

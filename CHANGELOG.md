@@ -1,5 +1,13 @@
 # 更新日志
 
+## 1.2.4（2026-10-18）
+
+- **DSH 0.2.1-rc.2 兼容核对：无需改代码**。仍用「两版本 npm tarball 逐包 diff」核对（alpha.1 → rc.2，15 个相关包）：本插件依赖的接口**全部未变**——`session/event(session,event)`:61、`TokenUsage`（`inputTokens` 等）:161、`webServer.register`:326、`credentials.resolve/readRecord/listRecords`:480/527/542、`sessionPersistence.root`:2434、`dshHomePath`:4526、客户端平台门禁 `platform !== "web"`:733、bundle 路由与 `shell.overlay`；会话日志布局实测仍为 `…/<会话id>/session.v4.jsonl.zstd`。
+- **兼容门禁语义更新（重要）**：0.2.1-rc.2 起优先按 `engines.dsh` 判定（**声明了就忽略 peerDependencies**），没有才回落 peerDependencies，**两者都没有则放行**（`unmetRequirements`，结果字段 `peers`→`requirements`）。本插件只有 `engines.node` + 无 DSH peers → 放行；README 增补"若将来要用 `engines.dsh`，请用纯下界范围并实测"的说明。
+- **客户端新增 release 门禁**：客户端模块图携带 `WebBootRelease {version, commit}`，与当前 Host 版本不一致的图不会被应用、更新暂停至页面重载 → **DSH 升级后需刷新已打开的页面**；插件侧无需声明（字段由 Host 图携带）。
+- 其他与本插件无关的变化（已记录以备将来）：新增 `job/*`、`working-directory/change` 事件类型；新增 `remote-access`、`working-directory`、`tool-working-directory` 服务行；账号平台对 bonus 元数据放宽、`getBalance` 形状不变（`/api/v0/users/get_user_summary` → `value: normal_wallets`、`bonusWallets: bonus_wallets`）；凭据来源顺序改为 `$DSH_HOME/.credentials.yaml` 优先；新增实验性 bundle（plugin-market / ralph / session-search / session-titles / terminal / tool-worktree / cot-translation / badge-skill），移除 webhook 与 hooks-* 包；CLI 新增 `--from-default-profile <template>`。
+- 在产验证（0.2.1-rc.2）：插件 v1.2.3 加载正常、`keyState.mode=api-key`、余额 ¥20.77、今日 15,416,050 tokens / ¥2.6615 / 39 条、`pricedAll=true`、回填 `mode=mtime`（2/390、13 事件）、价源 `official`、节假日 `sync`（2026/2027、33 天）、`dayType=weekend`。
+
 ## 1.2.3（2026-10-04）
 
 - **DSH 0.2.1-alpha.1 兼容核对：无需改代码**。仍用「两版本 npm tarball 逐包 diff」核对变更面：新增 `@deepseek-ai/dsh-schedule`（`schedule` 行进入 web-app 组合，提供定时任务/提醒）与 **`dsh web --public-url`**（对外公布 URL，新增 `public-url-*.js`）；其余为内部清理/注释（账号平台错误码 `network`→`no-response`、credentials 的 invariant 伴生文件内联、`refresh()` 不再向队列抛错、app-boot 引入 `ProfileRuntimeResolution`）。**我们依赖的接口全部未变**：`session/event(session,event)`、`TokenUsage` 字段、`webServer.register`、`credentials.resolve/readRecord/listRecords`、`sessionPersistence.root`、`dshHomePath`、客户端 `__ModuleLoader__`/`shell.overlay`、bundle 路由、会话日志布局；**兼容门禁函数逐字节相同**（`evaluatePluginCompatibility`/`preflight`/`readProfileCompatibility` md5 一致），插件仍以"不声明 peerDependencies"放行。
