@@ -1,5 +1,16 @@
 # 更新日志
 
+## 1.3.0（2026-10-18）
+
+- **新增：Search / Fetch 计费**（官方价格页：各 **5 元 / 1000 次成功请求** = ¥0.005/次，**固定单价、不乘峰谷倍率**）。
+  - 计数口径：`web_search` 一次可带多条查询，`dsh-tool-web` 对**每条查询单独发一次 provider 请求** → 按 `arguments.queries` 条数计；`web_fetch` 只收单个 URL → 每次调用计 1。provider 内部**无重试**、工具层**无结果缓存**，故"调用数 = 请求数"。
+  - 成功判定：`tool/result` 带 **`error` 字段**=失败（官方不计费）；成功但无结果的工具输出固定为 **"No results found."**（官方也不计费）；其余计为成功。用 `callId` ↔ `message.toolCallId` 配对。
+  - **provider 感知**：仅当 `web.config.searchProvider === "deepseek-search-api"` 且 `fetchProvider === "deepseek-fetch-api"`（独立 API）时计费；默认组合 `deepseek-official`（服务端工具，2026-11-01 前免费）+ `http`（本地抓取，免费）时**只计数不计费**，卡片标注口径。provider 读 `ctx.get('web').config`，回退环境变量 `DSH_WEB_SEARCH_PROVIDER` / `DSH_WEB_FETCH_PROVIDER`。
+  - 展示：卡片新增两行（次数与计费数、成本与 provider 口径），「成本」行改为「模型 + Search/Fetch」合计；`/state.websearch` 暴露 `search{queries,ok,empty,error}` / `fetch{calls,ok,error}` / `unitCny` / `billable` / `providers` / `costCny`，`totals` 增加 `webCostCny` 与 `costAllCny`。
+  - 回填同样折叠 `tool/call` + `tool/result`（复用 mtime 预筛）。
+- **已知边界**：① 多查询调用里**任一查询失败会整体中止**（源码 "A failed search aborts its siblings"），已成功的查询已被计费却无法从事件得知条数 → 该情形**少计**（偏保守）；② 若切回服务端工具路径（`deepseek-official`），2026-11-01 起其收费**无法精确计数**（响应里的 `web_search_tool_result` 块数被适配器丢弃、DSH 不回报次数）；③ API 本身 QPS 5，并发多查询可能 429（失败不计费）。
+- 离线验证 4/4：① 独立 API 路径（2 查询成功 + 1 无结果 + 1 失败 + 抓取 1 成 1 败 → 计费 3 次 ¥0.015）② 默认免费路径（计数但不计费）③ 环境变量兜底 ④ 回填（3 查询 + 1 抓取 → ¥0.02，token 与 web 合计正确）。
+
 ## 1.2.4（2026-10-18）
 
 - **DSH 0.2.1-rc.2 兼容核对：无需改代码**。仍用「两版本 npm tarball 逐包 diff」核对（alpha.1 → rc.2，15 个相关包）：本插件依赖的接口**全部未变**——`session/event(session,event)`:61、`TokenUsage`（`inputTokens` 等）:161、`webServer.register`:326、`credentials.resolve/readRecord/listRecords`:480/527/542、`sessionPersistence.root`:2434、`dshHomePath`:4526、客户端平台门禁 `platform !== "web"`:733、bundle 路由与 `shell.overlay`；会话日志布局实测仍为 `…/<会话id>/session.v4.jsonl.zstd`。
