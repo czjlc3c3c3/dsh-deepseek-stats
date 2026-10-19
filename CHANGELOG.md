@@ -1,5 +1,13 @@
 # 更新日志
 
+## 1.4.3（2026-10-19）
+
+- **修正计费口径（C 2026-10-19 用控制台证据纠正）**：DeepSeek 控制台显示 **tool-fetch 已被计费** → 独立 Search/Fetch API（`deepseek-search-api` / `deepseek-fetch-api`）是**按价格表立即计费**，不是从 11-01 起。11-01 00:00 只针对「**服务端工具**」路径（`deepseek-official`），且该路径的搜索次数被适配器丢弃（DSH 拿不到），本插件对它**只计数、不估算费用**。
+- 因此：`billingActive` = 是否走独立 API（立即计费）；`billingReason ∈ {paid-api, server-tool, free-provider}`；`billingStartAt` 改为"服务端工具路径的收费起始日"（仅作提示）；新增 `serverTool` 标记；**移除 `DSH_WEB_BILLING_START` 环境变量**（不再需要假设）。
+- 卡片文案按路径区分：走独立 API → 显示次数与计费数；服务端工具 → 灰字「11-01 起收费，次数不可精确统计」；本地抓取 → 「本地抓取，不计费」。
+- 验证：宿主 3/3（独立 API 立即计费 ¥0.015（2 查询成功+1 无结果+1 失败+抓取 1 成 1 败）；默认路径不计费；环境变量 provider 兜底 ¥0.005）；UI 无头渲染 5 项通过（含服务端工具/本地抓取两种灰字）。
+- 附：今天（10-19）按事件时间统计为 **0 次搜索 / 1 次抓取**，与插件一致；此前"3 搜索/9 抓取"是我临时脚本没按事件时间过滤导致的误算。
+
 ## 1.4.2（2026-10-18）
 
 - **tooltip 改为与面板同一显示风格**：背景 `--dsw-alias-bg-overlay`（与浮窗/卡片同一表面色）、文字 `--dsw-alias-label-primary`、标签行 `--dsw-alias-label-secondary`、边框 `--dsw-alias-border-l2`、阴影浮起——不再用深底白字，跟随 DSH 明暗主题。
