@@ -1,5 +1,13 @@
 # 更新日志
 
+## 1.4.4（2026-11-01）
+
+- **DSH 0.2.2-alpha.2 兼容核对：无需改代码**（仍用 npm 两版本 tarball 逐包 diff，17 个包）。已装版本逐项核对：`session/event`:63、`TokenUsage.inputTokens`:168、`webServer.register`:375、`credentials.resolve/readRecord/listRecords`:480/527/542、`sessionPersistence.root`:2434、`dshHomePath`:4585、客户端平台门禁 `platform !== "web"`:788、兼容门禁 `unmetRequirements`:401（**与上一版逐字节相同**）；会话日志仍 `session.v4.jsonl.zstd`（格式版本 4）；`web_search`/`web_fetch` 工具名、`arguments.queries`/`url`、`No results found.` 文案、`tool/result.error` 均未变；搜索仍**一查询一请求**、无重试无缓存；适配器**仍不处理 `server_tool_use`**（服务端工具路径依旧不可精确计数）。在产实测：插件加载正常、首页注入 1 处、bundle 200（30,290 B）、今日 61 步 / 25.2M tokens / ¥3.2014、价源 official、回填 `mode=mtime`。
+- **DSH 0.2.2-alpha.2 的新变化**（与本插件无关，仅记录）：base 新增 `tool-executor-native` / `tool-executor-ptc` 执行器；web-app 新增 `message-quotes`、`ui-file-drag`、`deliverable-file-references`、`entry-customization`；各包新增 de/es/fr/ja/pt/ru 等 `locale/` 目录（宿主侧文案本地化）；客户端 manifest 新增包资源钩子（`resolveAsset` / `ClientBundleRequire.asset`）。
+- **界面：服务端工具路径的灰字改为日期感知**——今天（2026-11-01）起该路径开始收费，文案由「11-01 起收费」改为「**11-01 起已按次收费**，次数不可精确统计」；中心 tooltip 同步为「服务端工具，已计费但次数不可知」。
+- 官方价格核对（2026-11-01 抓取）：`deepseek-flash` 0.02/1/4、`deepseek-v4-pro` 0.15/4.5/13.5（空闲）、高峰窗口与节假日规则、Search/Fetch 5 元/1000 次 —— **与内置价一致，无漂移**。
+- 验证：UI 无头渲染 4 组（多模型+web、单模型整圈、服务端工具灰字、本地抓取、空态）全部通过。
+
 ## 1.4.3（2026-10-19）
 
 - **修正计费口径（C 2026-10-19 用控制台证据纠正）**：DeepSeek 控制台显示 **tool-fetch 已被计费** → 独立 Search/Fetch API（`deepseek-search-api` / `deepseek-fetch-api`）是**按价格表立即计费**，不是从 11-01 起。11-01 00:00 只针对「**服务端工具**」路径（`deepseek-official`），且该路径的搜索次数被适配器丢弃（DSH 拿不到），本插件对它**只计数、不估算费用**。
